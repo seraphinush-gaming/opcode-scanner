@@ -1,0 +1,1 @@
+module.exports = pak => pak.order === 2 && pak.parsed && pak.parsed.unk.equals(6)
