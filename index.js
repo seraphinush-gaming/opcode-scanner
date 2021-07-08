@@ -140,7 +140,7 @@ class Scanner {
             }
 
             this.writeMapFile();
-            // TODO
+            delete this.patterns[pattern];
             break;
           }
           else {
