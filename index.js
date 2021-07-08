@@ -7,8 +7,6 @@ const Packet = require('./packet.js');
 const FAKE_OPCODE = 65535;
 
 const PASSIVE_SCAN_INTERVAL = 2800;
-const PASSIVE_SCAN_TIMEOUT = 100;
-const PASSIVE_SCAN_HOLDOFF = 100;
 
 class Scanner {
 
@@ -24,6 +22,8 @@ class Scanner {
     this.patterns = {};
     this.packetDefList = [...(mod.dispatch.protocol.messages || mod.dispatch.protocol.constructor.defs).keys()];
     this.version = mod.clientInterface.info.protocolVersion;
+
+    this.isScanning = false;
 
     // load opcodes
     try {
@@ -86,7 +86,13 @@ class Scanner {
       this.history.push(packet);
     });
 
-    this.passiveScan();
+    this.scanInterval = this.mod.setInterval(() => {
+      if (Object.keys(this.patterns).length === 0) {
+        this.mod.clearInterval(this.scanInterval);
+        this.mod.log('All opcodes found. heuristic patterns depleted.');
+      }
+      if (!this.isScanning) this.passiveScan();
+    }, PASSIVE_SCAN_INTERVAL)
 
   }
 
@@ -105,59 +111,62 @@ class Scanner {
   }
 
   async scan(packet) {
-    let prefix = packet.fromServer ? 'S_' : 'C_';
+    return new Promise(async (resolve) => {
+      let prefix = packet.fromServer ? 'S_' : 'C_';
 
-    for (let pattern in this.patterns) {
-      if (pattern.startsWith(prefix)) {
-        packet.parsedName = pattern;
+      for (let pattern in this.patterns) {
+        if (this.mapped[pattern]) continue;
 
-        let code = this.mod.dispatch.protocolMap.name.get(pattern);
-        if (!code) this.mod.dispatch.protocolMap.name.set(pattern, FAKE_OPCODE);
+        if (pattern.startsWith(prefix)) {
+          packet.parsedName = pattern;
 
-        packet.setHistory(this.history);
-        packet.setMap(this.map);
-        packet.setMapped(this.mapped);
-        try {
-          await this.parse(packet);
-        }
-        catch (err) {
-          packet.parsed = null;
-          packet.parsedName = null;
-          packet.parsedLength = 0;
-          continue;
-        }
+          let code = this.mod.dispatch.protocolMap.name.get(pattern);
+          if (!code) this.mod.dispatch.protocolMap.name.set(pattern, FAKE_OPCODE);
 
-        if (this.patterns[pattern](packet)) {
-          if (packet.parsedLength === packet.data.length) {
-            this.mod.log('Potential opcode found : ' + pattern + ' = ' + packet.code);
-            console.log(JSON.stringify(packet.parsed, (key, value) => typeof value === 'bigint' ? `${value}` : value, 2));
-            this.map[packet.code] = pattern;
-            this.mapped[pattern] = true;
-
-            for (let item in this.history) {
-              if (item.code === packet.code && item.index !== packet.index)
-                this.parse(item);
-            }
-
-            this.writeMapFile();
-            delete this.patterns[pattern];
-            break;
+          try {
+            await this.parse(packet);
           }
-          else {
-            if (!packet.parsedIndex.has(packet.index)) {
-              packet.parsedIndex.add(packet.index);
+          catch (err) {
+            packet.parsed = null;
+            packet.parsedName = null;
+            packet.parsedLength = 0;
+            continue;
+          }
+
+          if (this.patterns[pattern](packet)) {
+            if (packet.parsedIndex.has(packet.index)) continue;
+            packet.parsedIndex.add(packet.index);
+
+            if (packet.parsedLength === packet.data.length) {
+              this.mod.log('Potential opcode found : ' + pattern + ' = ' + packet.code);
+              console.log(JSON.stringify(packet.parsed, (key, value) => typeof value === 'bigint' ? `${value}` : value, 2));
+              this.map[packet.code] = pattern;
+              this.mapped[pattern] = true;
+
+              for (let item in this.history) {
+                if (item.code === packet.code && item.index !== packet.index)
+                  this.parse(item);
+              }
+
+              this.writeMapFile();
+              delete this.patterns[pattern];
+              break;
+            }
+            else {
               this.mod.log('Possible match : ' + pattern + ' = ' + packet.code + ' # length ' + packet.parsedLength + ' (expected ' + packet.data.length + ')');
               console.log(JSON.stringify(packet.parsed, (key, value) => typeof value === 'bigint' ? `${value}` : value, 2));
             }
           }
-        }
-        else {
-          packet.parsed = null;
-          packet.parsedName = null;
-          packet.parsedLength = 0;
+          else {
+            packet.parsed = null;
+            packet.parsedName = null;
+            packet.parsedLength = 0;
+          }
         }
       }
-    }
+
+      resolve();
+    });
   }
 
   writeMapFile() {
@@ -178,30 +187,26 @@ class Scanner {
 
   // async
   async passiveScan() {
-    let connected = true;
+    this.isScanning = true;
 
-    while (connected) {
-      await this.sleep(PASSIVE_SCAN_INTERVAL);
+    // set connected state before scanning so that the final pass will definitely happen after disconnect
+    let connected = this.mod.connection.state !== 3;
+    let mapped_S_LOGIN = this.mapped['S_LOGIN'];
 
-      // set connected state before scanning so that the final pass will definitely happen after disconnect
-      connected = this.mod.connection.state !== 3;
+    for (let i = (mapped_S_LOGIN && this.history.length > 50) ? this.history.length - 50 : 0; i < this.history.length; i++) {
+      let packet = this.history[i];
 
-      let sleepTime = Date.now();
-      let mapped_S_LOGIN = this.mapped['S_LOGIN'];
+      if (!packet.parsed && connected) {
+        packet.setMap(this.map);
+        packet.setMapped(this.mapped);
+        if (this.index - packet.index <= 100)
+          packet.setHistory(this.history);
 
-      for (let i = mapped_S_LOGIN && this.history.length > 50 ? this.history.length - 50 : 0; i < this.history.length; i++) {
-        let packet = this.history[i];
-
-        if (!packet.parsed) {
-          if (Date.now() - sleepTime > PASSIVE_SCAN_TIMEOUT && connected) {
-            await this.sleep(PASSIVE_SCAN_HOLDOFF);
-            sleepTime = Date.now();
-          }
-
-          this.scan(packet);
-        }
+        await this.scan(packet);
       }
     }
+
+    this.isScanning = false;
   }
 
   sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }

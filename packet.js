@@ -14,6 +14,8 @@ class Packet {
         return packet;
       }
     }
+
+    return null;
   }
 
   prev(name) {
@@ -32,6 +34,8 @@ class Packet {
         return packet;
       }
     }
+    
+    return null;
   }
 
   next(name) {
@@ -50,6 +54,8 @@ class Packet {
         return packet;
       }
     }
+    
+    return null;
   }
 
   name() {

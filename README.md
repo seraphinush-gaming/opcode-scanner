@@ -21,6 +21,7 @@ Packets are of the following key-values :
 - `history` : indexed array of all previous Packets prior to current Packet
 - `index` : index of current packet
 - `parsed` : parsed data based on packet definition
+- `parsedIndex` : parsed packet index
 - `parsedLength` : parsed length
 - `parsedName` : parsed name
 - `time` : time of packet
@@ -133,6 +134,8 @@ module.exports = packet => { // 3
 ## Changelog
 <details>
 
+    1.02
+    - Optimized scan interval using async await
     1.01
     - Updated index.js
       - Added scan threshold when S_LOGIN is mapped
