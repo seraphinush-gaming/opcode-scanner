@@ -1,5 +1,4 @@
-module.exports = pak => {
-	let prev = pak.prev()
-
-	return prev && prev.code === pak.code
+module.exports = packet => {
+	let prev = packet.prev();
+	return prev && prev.name() === 'S_SELECT_USER';
 }

@@ -1,4 +1,4 @@
 module.exports = packet => {
-  return packet.order === 1 &&
-    (packet.parsed.enableCustom || !packet.parsed.enableCustom);
+  let prev = packet.prev();
+  return prev &&  prev.name() === 'S_CHECK_VERSION';
 }

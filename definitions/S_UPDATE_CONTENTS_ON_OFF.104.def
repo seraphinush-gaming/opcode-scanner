@@ -1,0 +1,3 @@
+int32 content # 8 = TERA Rewards, 9 = TERA Rewards Emporium
+bool  disabled
+int32 unk

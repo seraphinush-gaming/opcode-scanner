@@ -56,11 +56,11 @@ class Packet {
     return this.map[this.code];
   }
 
-  setHistory(history) {
-    this.history = history;
-    return;
-  }
+  setHistory(history) { this.history = history; }
 
+  setMap(map) { this.map = map; }
+
+  setMapped(mapped) { this.mapped = mapped; }
 }
 
 module.exports = Packet;

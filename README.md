@@ -5,6 +5,7 @@ Outputs a protocol.version.map file in the directory it's located in.
 
 ## Usage
 - Requires modular heuristic files in `patterns` folder
+- Requires custom definition files to be added to tera-toolbox in `toolbox/data/definitions` folder
 - Generates protocol.version.map file in `maps` folder
 
 ## Pattern
@@ -128,3 +129,18 @@ module.exports = packet => { // 3
   - S_WHISPER
   
 </details>
+
+## Changelog
+<details>
+
+    1.01
+    - Updated index.js
+      - Added scan threshold when S_LOGIN is mapped
+    - Updated packet.js
+    - Updated heuristics
+    - Removed old heuristics
+    1.00
+    - Initial commit
+
+</details>
+

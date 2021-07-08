@@ -6,7 +6,7 @@ const Packet = require('./packet.js');
 
 const FAKE_OPCODE = 65535;
 
-const PASSIVE_SCAN_INTERVAL = 5000;
+const PASSIVE_SCAN_INTERVAL = 2800;
 const PASSIVE_SCAN_TIMEOUT = 100;
 const PASSIVE_SCAN_HOLDOFF = 100;
 
@@ -46,8 +46,11 @@ class Scanner {
 
       for (let pattern of patterns) {
         pattern = pattern.slice(0, pattern.indexOf('.')) || pattern;
-        if (this.packetDefList.includes(pattern) && !this.mapped[pattern])
-          this.patterns[pattern] = require('./patterns/' + pattern);
+        if (!this.packetDefList.includes(pattern)) {
+          mod.warn('Missing definition. could not load heuristic : ' + pattern);
+          continue;
+        }
+        if (!this.mapped[pattern]) this.patterns[pattern] = require('./patterns/' + pattern);
       }
 
       mod.log('Opcode scanner initialized, loaded ' + Object.keys(this.patterns).length + '/' + patterns.length + ' patterns.');
@@ -66,6 +69,7 @@ class Scanner {
         history: this.history,
         index: this.index++,
         parsed: null,
+        parsedIndex: new Set(),
         parsedLength: 0,
         parsedName: null,
         time: Date.now()
@@ -111,6 +115,8 @@ class Scanner {
         if (!code) this.mod.dispatch.protocolMap.name.set(pattern, FAKE_OPCODE);
 
         packet.setHistory(this.history);
+        packet.setMap(this.map);
+        packet.setMapped(this.mapped);
         try {
           await this.parse(packet);
         }
@@ -124,7 +130,7 @@ class Scanner {
         if (this.patterns[pattern](packet)) {
           if (packet.parsedLength === packet.data.length) {
             this.mod.log('Potential opcode found : ' + pattern + ' = ' + packet.code);
-            console.log(JSON.stringify(packet.parsed, null, 2));
+            console.log(JSON.stringify(packet.parsed, (key, value) => typeof value === 'bigint' ? `${value}` : value, 2));
             this.map[packet.code] = pattern;
             this.mapped[pattern] = true;
 
@@ -138,8 +144,11 @@ class Scanner {
             break;
           }
           else {
-            this.mod.log('Possible match : ' + pattern + ' = ' + packet.code + ' # length ' + packet.parsedLength + ' (expected ' + packet.data.length + ')');
-            console.log(JSON.stringify(packet.parsed, null, 2));
+            if (!packet.parsedIndex.has(packet.index)) {
+              packet.parsedIndex.add(packet.index);
+              this.mod.log('Possible match : ' + pattern + ' = ' + packet.code + ' # length ' + packet.parsedLength + ' (expected ' + packet.data.length + ')');
+              console.log(JSON.stringify(packet.parsed, (key, value) => typeof value === 'bigint' ? `${value}` : value, 2));
+            }
           }
         }
         else {
@@ -178,8 +187,9 @@ class Scanner {
       connected = this.mod.connection.state !== 3;
 
       let sleepTime = Date.now();
+      let mapped_S_LOGIN = this.mapped['S_LOGIN'];
 
-      for (let i = this.history.length > 30 ? this.history.length - 30 : 0; i < this.history.length; i++) {
+      for (let i = mapped_S_LOGIN && this.history.length > 50 ? this.history.length - 50 : 0; i < this.history.length; i++) {
         let packet = this.history[i];
 
         if (!packet.parsed) {

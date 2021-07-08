@@ -1,5 +1,4 @@
-module.exports = packet => { // 1
-    return packet.order >= 4 &&
-        packet.parsed.id !== 0 &&
-        packet.parsed.unk === 0;
-} 
+module.exports = packet => {
+  let prev = packet.prev('S_GET_USER_GUILD_LOGO');
+  return prev && prev.parsed.playerId === packet.parsed.id;
+}
