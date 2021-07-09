@@ -134,8 +134,11 @@ module.exports = packet => { // 3
 ## Changelog
 <details>
 
+    1.03
+    - Optimized scan interval using setInterval
+    - Added heuristc submodules
     1.02
-    - Optimized scan interval using async await
+    - Optimized passive scan using async await
     1.01
     - Updated index.js
       - Added scan threshold when S_LOGIN is mapped

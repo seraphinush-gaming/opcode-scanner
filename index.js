@@ -5,8 +5,12 @@ const path = require('path');
 const Packet = require('./packet.js');
 
 const FAKE_OPCODE = 65535;
+const VERBOSE_LOG = false;
 
-const PASSIVE_SCAN_INTERVAL = 2800;
+let SCAN_TIME = null;
+const SCAN_INTERVAL = 3000;
+const SCAN_INTERVAL_CORRECTION = 50;
+const SCAN_PACKET_LIMIT = 150;
 
 class Scanner {
 
@@ -83,16 +87,27 @@ class Scanner {
           this.mod.warn(err.message);
         }
       }
+
       this.history.push(packet);
     });
 
-    this.scanInterval = this.mod.setInterval(() => {
+    // passive scan
+    this.scanInterval = SCAN_INTERVAL;
+    this.scanIntervalId = this.mod.setInterval(() => {
       if (Object.keys(this.patterns).length === 0) {
-        this.mod.clearInterval(this.scanInterval);
+        this.mod.clearInterval(this.scanIntervalId);
         this.mod.log('All opcodes found. heuristic patterns depleted.');
       }
-      if (!this.isScanning) this.passiveScan();
-    }, PASSIVE_SCAN_INTERVAL)
+
+      if (!this.isScanning) {
+        if (Date.now() - SCAN_TIME > SCAN_INTERVAL_CORRECTION)
+        this.scanInterval -= SCAN_INTERVAL_CORRECTION;
+        SCAN_TIME = Date.now();
+        this.passiveScan();
+      } else {
+        this.scanInterval += SCAN_INTERVAL_CORRECTION;
+      }
+    }, this.scanInterval);
 
   }
 
@@ -139,7 +154,7 @@ class Scanner {
 
             if (packet.parsedLength === packet.data.length) {
               this.mod.log('Potential opcode found : ' + pattern + ' = ' + packet.code);
-              console.log(JSON.stringify(packet.parsed, (key, value) => typeof value === 'bigint' ? `${value}` : value, 2));
+              if (VERBOSE_LOG) this.logParsed(packet.parsed);
               this.map[packet.code] = pattern;
               this.mapped[pattern] = true;
 
@@ -154,7 +169,7 @@ class Scanner {
             }
             else {
               this.mod.log('Possible match : ' + pattern + ' = ' + packet.code + ' # length ' + packet.parsedLength + ' (expected ' + packet.data.length + ')');
-              console.log(JSON.stringify(packet.parsed, (key, value) => typeof value === 'bigint' ? `${value}` : value, 2));
+              if (VERBOSE_LOG) this.logParsed(packet.parsed);
             }
           }
           else {
@@ -167,6 +182,16 @@ class Scanner {
 
       resolve();
     });
+  }
+
+  logParsed(message) {
+    console.log(JSON.stringify(message, (key, value) => {
+      if (typeof value === 'object' && value.type && value.type === 'Buffer' && value.data)
+        return value.data = '[...]'
+      if (typeof value === 'bigint')
+        return value.toString();
+      return value;
+    }, 2));
   }
 
   writeMapFile() {
@@ -193,13 +218,13 @@ class Scanner {
     let connected = this.mod.connection.state !== 3;
     let mapped_S_LOGIN = this.mapped['S_LOGIN'];
 
-    for (let i = (mapped_S_LOGIN && this.history.length > 50) ? this.history.length - 50 : 0; i < this.history.length; i++) {
+    for (let i = (mapped_S_LOGIN && this.history.length > SCAN_PACKET_LIMIT) ? this.history.length - SCAN_PACKET_LIMIT : 0; i < this.history.length; i++) {
       let packet = this.history[i];
 
       if (!packet.parsed && connected) {
         packet.setMap(this.map);
         packet.setMapped(this.mapped);
-        if (this.index - packet.index <= 100)
+        if (this.index - packet.index <= SCAN_PACKET_LIMIT)
           packet.setHistory(this.history);
 
         await this.scan(packet);

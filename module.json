@@ -3,5 +3,5 @@
   "description": "tera-toolbox module to scan opcodes using modular heuristics",
   "name": "opcode-scanner",
   "supportUrl": "https://github.com/ylennia-archives/opcode-scanner/blob/master/README.md",
-  "version": "1.02.00"
+  "version": "1.03.00"
 }
