@@ -1,6 +1,6 @@
 // majorPatchVersion >= 107
 
-const MAX_INT32 = BigInt(2147483647);
+const MAX_INT32 = 2147483647n;
 const VANGUARD_VALOR = [99020000, 99020010, 99020020];
 
 module.exports = packet => {

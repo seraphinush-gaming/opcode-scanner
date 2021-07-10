@@ -189,7 +189,7 @@ class Scanner {
       if (typeof value === 'object' && value.type && value.type === 'Buffer' && value.data)
         return value.data = '[...]'
       if (typeof value === 'bigint')
-        return value.toString();
+        return value.toString() + 'n';
       return value;
     }, 2));
   }
