@@ -4,8 +4,10 @@ const fs = require('fs');
 const path = require('path');
 const Packet = require('./packet.js');
 
+const config = require('./config.json');
+
 const FAKE_OPCODE = 65535;
-const VERBOSE_LOG = false;
+const VERBOSE_LOG = config.VERBOSE_LOG;
 
 let SCAN_TIME = null;
 const SCAN_INTERVAL = 3000;
@@ -54,7 +56,10 @@ class Scanner {
           mod.warn('Missing definition. could not load heuristic : ' + pattern);
           continue;
         }
-        if (!this.mapped[pattern]) this.patterns[pattern] = require('./patterns/' + pattern);
+        if (!this.mapped[pattern]) {
+          this.patterns[pattern] = require('./patterns/' + pattern);
+          if (VERBOSE_LOG) mod.log('Added heuristic : ' + pattern);
+        }
       }
 
       mod.log('Opcode scanner initialized, loaded ' + Object.keys(this.patterns).length + '/' + patterns.length + ' patterns.');

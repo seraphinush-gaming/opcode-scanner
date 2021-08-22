@@ -3,7 +3,6 @@ module.exports = packet => {
   let prev = packet.prev('S_LOAD_TOPO');
   if (!prev || !prev.parsed) return false;
 
-
   for (let i = packet.index - 1; i > prev.index; i--) {
     let pak = packet.history[i];
     if (pak.name() === 'S_SPAWN_NPC') {
