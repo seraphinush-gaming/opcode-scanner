@@ -6,8 +6,8 @@ module.exports = packet => {
   let prev = packet.prev('S_LOAD_TOPO');
   if (!prev || !prev.parsed) return false;
 
-  if (prev.parsed.zone === 3012) { // training ground
-    return packet.parsed.target === 0n && // stone
+  if (prev.parsed.zone === 3012) { // Training Ground
+    return packet.parsed.target === 0n &&
       packet.parsed.maxHp === 1n &&
       packet.parsed.enrageThreshold === 0n &&
       packet.parsed.relation === 10 &&
@@ -24,7 +24,7 @@ module.exports = packet => {
       packet.parsed.parts && packet.parsed.parts.length === 0;
   }
   else {
-    return packet.parsed.target === 0n && // highwatch npcs
+    return packet.parsed.target === 0n && // Highwatch NPC
       packet.parsed.maxHp === 10000n &&
       packet.parsed.shapeId === 0 &&
       packet.parsed.status === 0 &&

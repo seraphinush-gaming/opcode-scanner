@@ -2,7 +2,9 @@ module.exports = packet => {
   if (!packet.prev('S_LOGIN')) return false;
 
   let prev = packet.prev('S_GET_USER_GUILD_LOGO');
-  return prev.parsed.guildId === packet.parsed.guildId &&
+  if (!prev || !prev.parsed) return false;
+
+  return packet.parsed.guildId === prev.parsed.guildId &&
     packet.parsed.guildLevel >= 0 &&
     packet.parsed.guildLevel < 400 &&
     packet.parsed.guildXp >= 0 &&

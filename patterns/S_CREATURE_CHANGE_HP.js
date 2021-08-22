@@ -7,7 +7,8 @@ module.exports = packet => {
   if (!next || !next.parsed) return false;
   if (packet.parsed.curHp > packet.parsed.maxHp) return false;
   if (packet.parsed.diff === 0n) return false;
-  return next.parsed.source === packet.parsed.source &&
-    next.parsed.value + packet.parsed.diff === 0n &&
+
+  return packet.parsed.source === next.parsed.source &&
+    packet.parsed.diff + next.parsed.value === 0n &&
     packet.parsed.crit < 2;
 }

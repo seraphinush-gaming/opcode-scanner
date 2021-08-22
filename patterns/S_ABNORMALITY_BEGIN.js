@@ -5,9 +5,9 @@ const VANGUARD_VALOR = [99020000, 99020010, 99020020];
 
 module.exports = packet => {
   let prev = packet.prev('S_LOGIN');
-  if (!prev) return false;
+  if (!prev || !prev.parsed) return false;
 
-  return prev.parsed.gameId === packet.parsed.target &&
+  return packet.parsed.target === prev.parsed.gameId &&
     VANGUARD_VALOR.includes(packet.parsed.id) &&
     packet.parsed.duration === MAX_INT32;
 }

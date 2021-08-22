@@ -4,6 +4,7 @@ module.exports = packet => {
 
   let next = packet.next('S_ACTION_STAGE');
   if (!next || !next.parsed) return false;
+
   return next.parsed.gameId === packet.parsed.target &&
     packet.parsed.currentMp <= packet.parsed.maxMp &&
     packet.parsed.maxMp <= 7500 &&

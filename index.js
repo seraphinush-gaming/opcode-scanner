@@ -106,7 +106,7 @@ class Scanner {
 
       if (!this.isScanning) {
         if (Date.now() - SCAN_TIME > SCAN_INTERVAL_CORRECTION)
-        this.scanInterval -= SCAN_INTERVAL_CORRECTION;
+          this.scanInterval -= SCAN_INTERVAL_CORRECTION;
         SCAN_TIME = Date.now();
         this.passiveScan();
       } else {
@@ -127,7 +127,7 @@ class Scanner {
         reject(err);
       }
       resolve();
-    })
+    });
   }
 
   async scan(packet) {
@@ -192,7 +192,7 @@ class Scanner {
   logParsed(message) {
     console.log(JSON.stringify(message, (key, value) => {
       if (typeof value === 'object' && value.type && value.type === 'Buffer' && value.data)
-        return value.data = '[...]'
+        return value.data = '[...]';
       if (typeof value === 'bigint')
         return value.toString() + 'n';
       return value;
@@ -200,17 +200,16 @@ class Scanner {
   }
 
   writeMapFile() {
-    let mapDir = path.join(__dirname, 'maps'),
-      res = [];
+    let mapDir = path.join(__dirname, 'maps');
+    let res = [];
 
     for (let code in this.map) {
       res.push(this.map[code] + ' = ' + code);
       res.sort();
     }
 
-    if (!fs.existsSync(mapDir)) {
+    if (!fs.existsSync(mapDir))
       fs.mkdirSync(mapDir);
-    }
 
     fs.writeFileSync(path.join(mapDir, 'protocol.' + this.version + '.map'), res.join('\n'));
   }

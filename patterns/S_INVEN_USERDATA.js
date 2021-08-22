@@ -1,6 +1,6 @@
 module.exports = packet => {
   let prev = packet.prev('S_LOGIN');
-  if (!prev) return false;
+  if (!prev || !prev.parsed) return false;
 
-  return prev.parsed.gameId === packet.parsed.gameId;
+  return packet.parsed.gameId === prev.parsed.gameId;
 }

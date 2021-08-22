@@ -7,8 +7,8 @@ module.exports = packet => {
     let pak = packet.history[i];
     if (pak.name() === 'S_SPAWN_NPC') {
       if (!pak.parsed) continue;
-      if (pak.parsed.gameId === packet.parsed.gameId &&
-        pak.parsed.loc.dist3D(packet.parsed.loc) < 100 &&
+      if (packet.parsed.gameId === pak.parsed.gameId &&
+        packet.parsed.loc.dist3D(pak.parsed.loc) < 100 &&
         (packet.parsed.type === 1 || packet.parsed.type === 5) &&
         packet.parsed.unk === 0)
         return true;
