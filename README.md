@@ -1,4 +1,4 @@
-# opcode-scanner
+# opcode-scanner ![](https://img.shields.io/badge/version-v110.01-333333.svg?colorA=333333&colorB=36ACB6)
 tera-toolbox module to scan opcodes using modular heuristics
 
 Outputs a protocol.version.map file in the directory it's located in.
@@ -7,6 +7,9 @@ Outputs a protocol.version.map file in the directory it's located in.
 - Requires modular heuristic files in `patterns` folder
 - Requires custom definition files to be added to tera-toolbox in `toolbox/data/definitions` folder
 - Generates protocol.version.map file in `maps` folder
+
+## Prerequisite
+- Open `config_gen.bat` to generate `config.json`
 
 ## Pattern
 `patterns` folder contains modular heuristic js files used to scan incoming and outgoing packets.
